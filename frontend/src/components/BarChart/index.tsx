@@ -1,32 +1,63 @@
+import axios from "axios";
+import { useEffect, useState } from "react";
 import Chart from "react-apexcharts";
+import { SaleSuccess } from "types/sale";
+import { round } from "utils/format";
+import { BASE_URL } from "utils/requests";
+
+type SeriesData = {
+    name: string;
+    data: number[];
+}
+type ChartData = {
+    labels: string[];
+    series: SeriesData[];
+};
 
 function BarChart() {
-    const state = {
 
+    const [chartData, setChartData] = useState<ChartData>({
+        labels: ["Label1"],
         series: [
             {
-                name: "% Sucesso",
-                data: [43.6, 67.1, 67.7, 45.6, 71.1]
+                name: "Name1",
+                data: [10]
             }
-        ],
-        options: {
-            plotOptions: {
-                bar: {
-                    horizontal: true,
-                }
-            },
-            labels: ['Anakin', 'Barry Allen', 'Kal-El', 'Logan', 'Padmé']            
-        }
+        ]
+    });    
+    
+    useEffect(() => {
+        axios.get(`${BASE_URL}/sales/success-by-seller`)
+        .then(response => {
+            const data = response.data as SaleSuccess[];
+            const sellerNames = data.map(x => x.sellerName)
+            const sucess = data.map(x => round( 100 * x.deals / x.visited, 1));
+            const serie1: SeriesData = {name: "Sucesso %", data: sucess};
+            setChartData({
+                labels: sellerNames, 
+                series: [serie1]
+            });
+        })
+    },[]);
 
+    const options = {
+        plotOptions: {
+            bar: {
+                horizontal: true,
+            }
+        },
+        dataLabels: {
+            enabled: true
+        },
     };
+    
     return (
         <div id="chart">
             <Chart
-                options={state.options}
-                series={state.series}
+                options={{...options, labels: chartData.labels}} 
+                series={chartData.series}
                 type="bar"
-                height="340"
-                key="bar_chart_id"
+                height="240"
             />
         </div>
     );
